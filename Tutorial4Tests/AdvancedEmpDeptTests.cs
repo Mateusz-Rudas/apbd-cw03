@@ -13,6 +13,7 @@ public class AdvancedEmpDeptTests
                     select e.Sal).Max();
 
         Assert.Equal(5000, maxSalary);
+        Assert.Contains(emps, e => e.Sal == maxSalary);
     }
 
     // 12. MIN salary in department 30
@@ -42,6 +43,10 @@ public class AdvancedEmpDeptTests
 
         Assert.Equal(2, firstTwo.Count);
         Assert.True(firstTwo[0].HireDate <= firstTwo[1].HireDate);
+        
+        var orderedByHireDate = emps.OrderBy(e => e.HireDate).ToList();
+        Assert.Equal(orderedByHireDate[0].EmpNo, firstTwo[0].EmpNo);
+        Assert.Equal(orderedByHireDate[1].EmpNo, firstTwo[1].EmpNo);
     }
 
     // 14. DISTINCT job titles
@@ -137,11 +142,17 @@ public class AdvancedEmpDeptTests
         var grades = Database.GetSalgrades();
 
         var result = (from e in emps
-                      join d in depts on e.DeptNo equals d.DeptNo
-                      from s in grades
-                      where e.Sal >= s.Losal && e.Sal <= s.Hisal
-                      select new { e.EName, d.DName, s.Grade }).ToList();
+            join d in depts on e.DeptNo equals d.DeptNo
+            from s in grades
+            where e.Sal >= s.Losal && e.Sal <= s.Hisal
+            select new { e.EName, e.Sal, d.DName, s.Grade }).ToList();
 
         Assert.Contains(result, r => r.EName == "ALLEN" && r.DName == "SALES" && r.Grade == 3);
+
+        Assert.All(result, r =>
+        {
+            var expected = grades.First(g => r.Sal >= g.Losal && r.Sal <= g.Hisal);
+            Assert.Equal(expected.Grade, r.Grade);
+        });
     }
 }
